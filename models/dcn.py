@@ -49,6 +49,7 @@ class Model(BaseModel):
                 feat_emb = tf.nn.embedding_lookup(params=embedding_matrix, ids=feat_idx)
             # emb regularization
             tf.add_to_collection(tf.GraphKeys.WEIGHTS, feat_emb)
+            feat_val = tf.reshape(feat_val, [-1, field_num, 1])
             model_input = feat_emb * feat_val
             # cross
             cross_output = cross_layer(model_input, self._model_config.cross_layer)

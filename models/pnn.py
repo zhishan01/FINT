@@ -8,11 +8,11 @@
 """
 import tensorflow as tf
 from models.base_model import BaseModel
-from models.layers import dnn_layer
+from models.layers import deep_layer
 
 
 class ModelConfig:
-    hidden_units = [64, 64]
+    hidden_units = [200, 200]
 
 
 def inner_product_layer(x, field_num):

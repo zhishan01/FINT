@@ -112,6 +112,7 @@ class Model(BaseModel):
             feat_emb = dropout_layer(feat_emb, self._params['dropout_rate'], self.is_train)
             # emb regularization
             tf.add_to_collection(tf.GraphKeys.WEIGHTS, feat_emb)
+            feat_val = tf.reshape(feat_val, [-1, field_num, 1])
             model_input = feat_emb * feat_val
             # joint training with feedforward nn
             deep_logits = None

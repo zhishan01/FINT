@@ -11,9 +11,9 @@ from models.base_model import BaseModel
 from models.layers import deep_layer, dropout_layer, active_layer
 
 class ModelConfig:
-    cross_layer_sizes = [16, 16, 16]
+    cross_layer_sizes = [200, 200, 200]
     cross_activation = 'identity'
-    hidden_units = [64, 64]
+    hidden_units = [200, 200]
 
 
 def cin_layer(nn_input, field_num, emb_dim, dropout_rate, is_train, l2_reg, hparams,
@@ -158,6 +158,7 @@ class Model(BaseModel):
             # linear
             linear_logits = tf.reduce_sum(tf.multiply(feat_val, linear_weight), axis=1) + bias
             # dnn
+            feat_val = tf.reshape(feat_val, [-1, field_num, 1])
             model_input = tf.multiply(feat_emb, feat_val)
             fc_input = tf.reshape(model_input, shape=[-1, field_num*emb_dim])
             deep_logits = deep_layer(fc_input,
