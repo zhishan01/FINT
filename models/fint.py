@@ -13,7 +13,7 @@ from models.layers import deep_layer
 
 class ModelConfig:
     fint_layer = 1
-    hidden_units = [200, 200]
+    hidden_units = [200, 200, 200]
 
 
 def field_aware_interaction_layer(xi, x0, field_num, l2_reg):

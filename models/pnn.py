@@ -12,19 +12,21 @@ from models.layers import deep_layer
 
 
 class ModelConfig:
-    hidden_units = [200, 200]
+    hidden_units = [200, 200, 200]
 
 
 def inner_product_layer(x, field_num):
-    row = []
-    col = []
-    for i in range(field_num - 1):
-        for j in range(i+1, field_num):
-            row.append(x[:,i,:])
-            col.append(x[:,j,:])
-    p = tf.transpose(tf.stack(row), perm=[1,0,2], name='element_wise_product_row') # None * (M*(M-1)) * K
-    q = tf.transpose(tf.stack(col), perm=[1,0,2], name='element_wise_product_col') # None * (M*(M-1)) * K
-    ip = tf.reduce_sum(p * q, [-1]) # None * (M*(M-1))
+    #row = []
+    #col = []
+    #for i in range(field_num - 1):
+    #    for j in range(i+1, field_num):
+    #        row.append(x[:,i,:])
+    #        col.append(x[:,j,:])
+    #p = tf.transpose(tf.stack(row), perm=[1,0,2], name='element_wise_product_row') # None * (M*(M-1)) * K
+    #q = tf.transpose(tf.stack(col), perm=[1,0,2], name='element_wise_product_col') # None * (M*(M-1)) * K
+    #ip = tf.reduce_sum(p * q, [-1]) # None * (M*(M-1))
+    ip = tf.matmul(x, x, transpose_b=True)
+    ip = tf.reshape(ip, shape=[-1, field_num*field_num])
     return ip
 
 

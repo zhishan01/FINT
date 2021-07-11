@@ -6,7 +6,9 @@
 # File Name: train.py
 # Description:
 """
+import os
 import sys
+import shutil
 import logging
 import argparse
 from importlib import import_module
@@ -14,14 +16,6 @@ import tensorflow as tf
 from tensorflow.python.client import timeline
 from sklearn.metrics import roc_auc_score, log_loss
 from data_loader import build_dataset, create_dataset_iterator, get_vocab_size
-
-import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "2"
-
-logging.basicConfig(level=logging.INFO,
-                    filename='./log.txt',
-                    filemode='w',
-                    format='%(asctime)s - %(filename)s[line:%(lineno)d] - %(levelname)s: %(message)s')
 
 
 def evaluate(data_iter, model, sess):
@@ -45,40 +39,42 @@ def evaluate(data_iter, model, sess):
 
 
 def train_and_eval(train_data_iter, val_data_iter, eval_data_iter,
-                   model, sess, eval_step, model_dir, print_each=500):
+                   model, sess, eval_step, model_dir, print_each=1000):
     step = 0
     best_auc = 0
+    last_logloss = 0
     hold_step = 0
     best_logloss = sys.maxsize
     train_handle = sess.run(train_data_iter.string_handle())
-    if not os.path.exists(model_dir):
-        os.makedirs(model_dir)
+    if os.path.exists(model_dir):
+        shutil.rmtree(model_dir)
+    os.makedirs(model_dir)
     while True:
         if step > 0 and step % eval_step == 0:
             logging.info('=============start evaluate================')
             val_auc, val_logloss = evaluate(val_data_iter, model, sess)
             eval_auc, eval_logloss = evaluate(eval_data_iter, model, sess)
-            if eval_auc > best_auc:
-                best_auc = eval_auc
             if eval_logloss < best_logloss:
-                hold_step = 0
+            #if eval_auc > best_auc:
                 best_logloss = eval_logloss
+                best_auc = eval_auc
+                hold_step = 0
                 model.saver.save(sess, '{}/model.ckpt'.format(model_dir), global_step=step)
             logging.info('step: {}, train auc: {:.4}, train logloss: {:.4}, eval auc: {:.4}, eval logloss: {:.4}, best_auc: {:.4}, best_logloss: {:.4}'\
                          .format(step, val_auc, val_logloss,
                                  eval_auc, eval_logloss, best_auc, best_logloss))
             logging.info('=============end evaluate================')
-            if hold_step > 3:
+            if hold_step > 6:
                 logging.info('eval logloss not decrease, early stopping')
                 break
             hold_step += 1
         try:
-            loss, _ = sess.run(
-                [model.loss, model.train_op],
+            loss, _, lr = sess.run(
+                [model.loss, model.train_op, model.lr],
                 feed_dict={model.handle:train_handle,
                            model.is_train: True})
             if step > 0 and step % print_each == 0:
-                logging.info('step: {}, train logloss: {},'.format(step, loss))
+                logging.info('step: {}, train logloss: {:.4}, lr: {:.4}'.format(step, loss, lr))
         except tf.errors.OutOfRangeError:
             break
         step += 1
@@ -99,6 +95,7 @@ def run(args):
               'dropout_rate': args.dropout_rate,
               'batch_size': args.batch_size,
               'emb_size': args.emb_size}
+    logging.info('params: {}'.format(params))
     model_module = import_module('models.{}'.format(args.model_name))
     model = model_module.Model(vocab_size, args.field_num, params)
     model.init_graph(y_true, feat_idx, feat_val, handle)
@@ -113,13 +110,11 @@ def run(args):
         ckpt = tf.train.latest_checkpoint(args.model_dir)
         model.saver.restore(sess, ckpt)
         test_auc, test_logloss = evaluate(test_data_iter, model, sess)
-        logging.info('test auc: {}, test logloss: {}'.format(test_auc, test_logloss))
+        logging.info('test auc: {:.4}, test logloss: {:.4}'.format(test_auc, test_logloss))
         logging.info('----done----')
 
 
 if __name__ == '__main__':
-    tf.set_random_seed(30)
-    tf.logging.set_verbosity(tf.logging.INFO)
     parser = argparse.ArgumentParser()
     parser.add_argument('--feature_size_file',
                         type=str,
@@ -173,5 +168,18 @@ if __name__ == '__main__':
     parser.add_argument('--eval_step',
                         type=int,
                         required=True)
+    parser.add_argument('--version',
+                        type=str,
+                        required=True)
+    parser.add_argument('--gpu',
+                        type=str,
+                        required=True)
     args = parser.parse_args()
-    run(args)
+    os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
+    tf.logging.set_verbosity(tf.logging.INFO)
+    logging.basicConfig(level=logging.INFO,
+                        filename='./log_{}.txt'.format(args.version),
+                        filemode='w',
+                        format='%(asctime)s - %(filename)s[line:%(lineno)d] - %(levelname)s: %(message)s')
+    with tf.Graph().as_default():
+        run(args)

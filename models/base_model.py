@@ -23,7 +23,7 @@ class BaseModel(object):
         self.logits, self.scores = self._model_fn(feat_idx, feat_val)
         self.loss = self._compute_loss(y_true, self.logits)
         self.train_op = self._build_train_op(self.loss)
-        self.saver = tf.train.Saver(max_to_keep=5)
+        self.saver = tf.train.Saver(max_to_keep=1)
 
     def _model_fn(self, feat_idx, feat_val):
         raise NotImplementedError('model must implement _model_fn methold')
@@ -39,8 +39,15 @@ class BaseModel(object):
         return loss
 
     def _build_train_op(self, loss):
+        global_step = tf.train.get_or_create_global_step()
+        self.lr = tf.train.exponential_decay(learning_rate = self._params['lr'],
+                                             global_step=global_step,
+                                             decay_steps = 3000,
+                                             decay_rate = 0.9)
+        #self.lr = tf.cast(self._params['lr'], tf.float32)
         with tf.control_dependencies(tf.get_collection(tf.GraphKeys.UPDATE_OPS)):
-            optimizer = tf.train.AdamOptimizer(learning_rate=self._params['lr'])
+            optimizer = tf.train.AdamOptimizer(learning_rate=self.lr)
+            #optimizer = tf.train.AdamOptimizer(learning_rate=self._params['lr'])
             #optimizer = tf.train.AdagradOptimizer(learning_rate=self._params['lr'])
-            train_op = optimizer.minimize(loss, global_step=tf.train.get_global_step())
+            train_op = optimizer.minimize(loss, global_step=global_step)
         return train_op

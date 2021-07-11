@@ -11,7 +11,7 @@ from models.base_model import BaseModel
 from models.layers import deep_layer, dropout_layer
 
 class ModelConfig:
-    hidden_units = [64, 64]
+    hidden_units = [200, 200, 200]
 
 class Model(BaseModel):
     def __init__(self, vocab_size, field_num, params):
@@ -61,6 +61,6 @@ class Model(BaseModel):
                                      is_train=self.is_train,
                                      output_bias=True)
             # sum
-            logits = tf.add_n([fm_bias, deep_logits])
+            logits = tf.add_n([fm_logits, deep_logits])
             scores = tf.sigmoid(logits)
             return logits, scores

@@ -11,7 +11,7 @@ from models.base_model import BaseModel
 from models.layers import deep_layer
 
 class ModelConfig:
-    hidden_units = [64, 64]
+    hidden_units = [200, 200, 200]
 
 class Model(BaseModel):
     def __init__(self, vocab_size, field_num, params):

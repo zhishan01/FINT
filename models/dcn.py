@@ -13,7 +13,7 @@ from models.layers import dnn_layer, dropout_layer
 
 class ModelConfig:
     cross_layer = 3
-    hidden_units = [64, 64]
+    hidden_units = [200, 200, 200]
 
 
 def cross_layer(x, layer_num):
@@ -21,8 +21,8 @@ def cross_layer(x, layer_num):
     xi = x
     input_dim = x.get_shape().as_list()[-1]
     for i in range(layer_num):
-        w = tf.get_variable('cross_weight_{}'.format(i), shape=[input_dim])
-        b = tf.get_variable('cross_bias_{}'.format(i), shape=[input_dim])
+        w = tf.get_variable('cross_weight_{}'.format(i), shape=[input_dim], trainable=True)
+        b = tf.get_variable('cross_bias_{}'.format(i), shape=[input_dim], trainable=True)
         xw = tf.reduce_sum(xi * w, axis=1, keep_dims=True)
         xi = x0 * xw + b + xi
     return xi
@@ -51,6 +51,7 @@ class Model(BaseModel):
             tf.add_to_collection(tf.GraphKeys.WEIGHTS, feat_emb)
             feat_val = tf.reshape(feat_val, [-1, field_num, 1])
             model_input = feat_emb * feat_val
+            model_input = tf.reshape(model_input, shape=[-1, field_num*emb_dim])
             # cross
             cross_output = cross_layer(model_input, self._model_config.cross_layer)
             # dnn

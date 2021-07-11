@@ -11,7 +11,7 @@ from models.base_model import BaseModel
 from models.layers import dnn_layer, dropout_layer, deep_layer
 
 class ModelConfig:
-    deep_layers = None
+    deep_layers = [200,200,200]
     blocks = 3
     block_shape = [32, 32, 32]
     heads = 2
@@ -47,6 +47,9 @@ def multihead_attention(queries,
                         dropout_rate=0,
                         is_training=True,
                         has_residual=True):
+    '''
+    part of the code comes from: https://github.com/DeepGraphLearning/RecommenderSystems/tree/master/featureRec
+    '''
 
     if num_units is None:
         num_units = queries.get_shape().as_list[-1]

@@ -16,15 +16,20 @@ def parse_example(example):
     }
     feature_dict = tf.io.parse_example(example, feature_description)
     label = tf.cast(feature_dict['label'], dtype=tf.float32)
-    norm_val = tf.square(tf.log(feature_dict['feat_val'].values + tf.constant(1e-6, dtype=tf.float32)))
+    feat_val_orig = feature_dict['feat_val'].values
+    length = tf.shape(feat_val_orig)[0]
+    # numerical features normalization
+    feat_val_signal = tf.sign(feat_val_orig)
+    norm_val = tf.log(tf.abs(feat_val_orig) + tf.constant(1.0, dtype=tf.float32)) + tf.constant(1.0, dtype=tf.float32)
     norm_val2 = tf.maximum(tf.constant(2, dtype=tf.float32), norm_val)
-    feat_val = tf.minimum(feature_dict['feat_val'].values, norm_val2)
+    feat_val = tf.minimum(tf.abs(feat_val_orig), norm_val2)
+    feat_val = feat_val * feat_val_signal
     return label, feature_dict['feat_idx'].values, feat_val
 
 
 def build_dataset(file_name, epoch, batch_size):
     dataset = tf.data.TFRecordDataset(file_name, num_parallel_reads=8)
-    dataset = dataset.repeat(epoch).batch(batch_size)
+    dataset = dataset.repeat(epoch).shuffle(500000, reshuffle_each_iteration=True).batch(batch_size)
     dataset = dataset.map(lambda x: parse_example(x), num_parallel_calls=8)
     dataset = dataset.prefetch(buffer_size=1)
     return dataset

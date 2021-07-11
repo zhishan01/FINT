@@ -12,10 +12,13 @@ from models.layers import dnn_layer, dropout_layer
 
 
 class ModelConfig:
-    hidden_factor = [16, 16]
+    hidden_factor = [200, 200, 200]
 
 
 def afm_attention_layer(x, field_num, hidden_factor, dropout_rate, l2_reg, is_train):
+    '''
+    part of the code comes from: https://github.com/hexiangnan/attentional_factorization_machine
+    '''
     element_wise_product_list = []
     for i in range(0, field_num):
         for j in range(i+1, field_num):

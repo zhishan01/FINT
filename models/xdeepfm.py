@@ -13,11 +13,14 @@ from models.layers import deep_layer, dropout_layer, active_layer
 class ModelConfig:
     cross_layer_sizes = [200, 200, 200]
     cross_activation = 'identity'
-    hidden_units = [200, 200]
+    hidden_units = [200, 200, 200]
 
 
 def cin_layer(nn_input, field_num, emb_dim, dropout_rate, is_train, l2_reg, hparams,
               res=False, direct=False, bias=False, reduce_D=False, f_dim=2):
+    '''
+    part of the code comes from: https://github.com/Leavingseason/xDeepFM
+    '''
     hidden_nn_layers = []
     field_nums = []
     final_len = 0
